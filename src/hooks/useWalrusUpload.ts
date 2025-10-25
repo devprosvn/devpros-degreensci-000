@@ -2,12 +2,20 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 interface WalrusUploadResponse {
-  blob_id: string;
-  content_id: string;
-  size: number;
+  newlyCreated?: {
+    blobObject: {
+      blobId: string;
+      size: number;
+    };
+    cost: number;
+  };
+  alreadyCertified?: {
+    blobId: string;
+    endEpoch: number;
+  };
 }
 
-const WALRUS_UPLOAD_URL = "https://upload-relay.testnet.walrus.space/v1/blobs";
+const WALRUS_UPLOAD_URL = "https://wal-publisher-testnet.staketab.org/v1/blobs";
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 const MAX_RETRIES = 2;
 
@@ -27,32 +35,37 @@ export const useWalrusUpload = () => {
     
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-
         setProgress(30);
 
         const response = await fetch(WALRUS_UPLOAD_URL, {
-          method: "POST",
-          body: formData,
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/octet-stream",
+          },
+          body: file,
         });
 
         setProgress(60);
 
         if (!response.ok) {
-          throw new Error(`Upload failed with status: ${response.status}`);
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${response.status} ${errorText}`);
         }
 
         const data: WalrusUploadResponse = await response.json();
+        console.log("Walrus upload response:", data);
         
         setProgress(100);
         setUploading(false);
 
-        if (!data.content_id) {
-          throw new Error("No content_id returned from Walrus");
+        // Extract blobId from response
+        const blobId = data.newlyCreated?.blobObject.blobId || data.alreadyCertified?.blobId;
+        
+        if (!blobId) {
+          throw new Error("No blobId returned from Walrus");
         }
 
-        return data.content_id;
+        return blobId;
       } catch (error) {
         lastError = error as Error;
         console.error(`Upload attempt ${attempt + 1} failed:`, error);
