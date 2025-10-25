@@ -34,12 +34,10 @@ export const useWalrusUpload = () => {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch(WALRUS_UPLOAD_URL, {
+        const response = await fetch("https://degreensci.work-devpros.workers.dev/", {
           method: "POST",
-          headers: {
-            "x-proxy-secret": WALRUS_SECRET,
-          },
-          body: formData,
+          headers: { "x-proxy-secret": "D3vPr0s#2025" },
+          body: formData
         });
 
         setProgress(60);
