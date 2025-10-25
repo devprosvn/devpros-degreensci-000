@@ -1,21 +1,15 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { WALRUS_SECRET } from "@/config/env";
 
 interface WalrusUploadResponse {
-  newlyCreated?: {
-    blobObject: {
-      blobId: string;
-      size: number;
-    };
-    cost: number;
-  };
-  alreadyCertified?: {
-    blobId: string;
-    endEpoch: number;
-  };
+  blobId: string;
+  size?: number;
+  cost?: number;
+  message?: string;
 }
 
-const WALRUS_UPLOAD_URL = "https://wal-publisher-testnet.staketab.org/v1/blobs";
+const WALRUS_UPLOAD_URL = "https://degreensci.work-devpros.workers.dev/";
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 const MAX_RETRIES = 2;
 
@@ -37,12 +31,15 @@ export const useWalrusUpload = () => {
       try {
         setProgress(30);
 
+        const formData = new FormData();
+        formData.append("file", file);
+
         const response = await fetch(WALRUS_UPLOAD_URL, {
-          method: "PUT",
+          method: "POST",
           headers: {
-            "Content-Type": "application/octet-stream",
+            "x-proxy-secret": WALRUS_SECRET,
           },
-          body: file,
+          body: formData,
         });
 
         setProgress(60);
@@ -58,14 +55,11 @@ export const useWalrusUpload = () => {
         setProgress(100);
         setUploading(false);
 
-        // Extract blobId from response
-        const blobId = data.newlyCreated?.blobObject.blobId || data.alreadyCertified?.blobId;
-        
-        if (!blobId) {
-          throw new Error("No blobId returned from Walrus");
+        if (!data.blobId) {
+          throw new Error("No blobId returned from Walrus proxy");
         }
 
-        return blobId;
+        return data.blobId;
       } catch (error) {
         lastError = error as Error;
         console.error(`Upload attempt ${attempt + 1} failed:`, error);
