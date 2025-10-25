@@ -1,15 +1,13 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { WALRUS_SECRET } from "@/config/env";
 
 interface WalrusUploadResponse {
-  blobId: string;
-  size?: number;
-  cost?: number;
-  message?: string;
+  blob_id: string;
+  content_id: string;
+  size: number;
 }
 
-const WALRUS_UPLOAD_URL = "https://degreensci.work-devpros.workers.dev/";
+const WALRUS_UPLOAD_URL = "https://upload-relay.testnet.walrus.space/v1/blobs";
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 const MAX_RETRIES = 2;
 
@@ -29,35 +27,32 @@ export const useWalrusUpload = () => {
     
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        setProgress(30);
-
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("https://degreensci.work-devpros.workers.dev/", {
+        setProgress(30);
+
+        const response = await fetch(WALRUS_UPLOAD_URL, {
           method: "POST",
-          headers: { "x-proxy-secret": "D3vPr0s#2025" },
-          body: formData
+          body: formData,
         });
 
         setProgress(60);
 
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Upload failed: ${response.status} ${errorText}`);
+          throw new Error(`Upload failed with status: ${response.status}`);
         }
 
         const data: WalrusUploadResponse = await response.json();
-        console.log("Walrus upload response:", data);
         
         setProgress(100);
         setUploading(false);
 
-        if (!data.blobId) {
-          throw new Error("No blobId returned from Walrus proxy");
+        if (!data.content_id) {
+          throw new Error("No content_id returned from Walrus");
         }
 
-        return data.blobId;
+        return data.content_id;
       } catch (error) {
         lastError = error as Error;
         console.error(`Upload attempt ${attempt + 1} failed:`, error);

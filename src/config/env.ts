@@ -4,4 +4,3 @@ export const NFT_REGISTRY = import.meta.env.VITE_NFT_REGISTRY || "";
 export const SUI_NETWORK = import.meta.env.VITE_SUI_NETWORK || "testnet";
 export const WALRUS_PUBLISHER_URL = import.meta.env.VITE_WALRUS_PUBLISHER_URL || "https://publisher.walrus-testnet.walrus.space";
 export const WALRUS_AGGREGATOR_URL = import.meta.env.VITE_WALRUS_AGGREGATOR_URL || "https://aggregator.walrus-testnet.walrus.space";
-export const WALRUS_SECRET = import.meta.env.VITE_WALRUS_SECRET || "D3vPr0s#2025";
