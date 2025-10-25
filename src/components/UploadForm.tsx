@@ -5,9 +5,10 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
+import { Progress } from "./ui/progress";
 import { Upload, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { WALRUS_PUBLISHER_URL } from "@/config/env";
+import { useWalrusUpload } from "@/hooks/useWalrusUpload";
 
 interface UploadFormProps {
   onUploadSuccess: (cid: string, metadata: string) => void;
@@ -16,8 +17,8 @@ interface UploadFormProps {
 export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [metadata, setMetadata] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [walrusCid, setWalrusCid] = useState("");
+  const { uploadToWalrus, uploading, progress } = useWalrusUpload();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -48,35 +49,14 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
       return;
     }
 
-    setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch(`${WALRUS_PUBLISHER_URL}/v1/store`, {
-        method: "PUT",
-        body: file,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to upload to Walrus");
-      }
-
-      const data = await response.json();
-      const cid = data.newlyCreated?.blobObject?.blobId || data.alreadyCertified?.blobId;
-      
-      if (!cid) {
-        throw new Error("No CID returned from Walrus");
-      }
-
-      setWalrusCid(cid);
-      onUploadSuccess(cid, metadata);
+      const contentId = await uploadToWalrus(file);
+      setWalrusCid(contentId);
+      onUploadSuccess(contentId, metadata);
       toast.success("File uploaded to Walrus successfully!");
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload file to Walrus");
-    } finally {
-      setUploading(false);
+      toast.error(error instanceof Error ? error.message : "Failed to upload file to Walrus");
     }
   };
 
@@ -132,10 +112,21 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
           />
         </div>
 
+        {uploading && (
+          <div className="space-y-2">
+            <Label>Upload Progress</Label>
+            <Progress value={progress} className="w-full" />
+            <p className="text-xs text-muted-foreground text-center">{progress}%</p>
+          </div>
+        )}
+
         {walrusCid && (
           <div className="space-y-2">
-            <Label>Walrus CID</Label>
+            <Label>Walrus Content ID</Label>
             <Input value={walrusCid} readOnly className="font-mono text-xs" />
+            <p className="text-xs text-muted-foreground">
+              File successfully stored on Walrus Testnet
+            </p>
           </div>
         )}
 
@@ -148,12 +139,12 @@ export const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
           {uploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Uploading to Walrus...
+              Uploading to Walrus... ({progress}%)
             </>
           ) : (
             <>
               <Upload className="mr-2 h-4 w-4" />
-              Upload to Walrus
+              Upload to Walrus Testnet
             </>
           )}
         </Button>

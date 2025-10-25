@@ -12,8 +12,13 @@ const Upload = () => {
   };
 
   const handleMintSuccess = () => {
+    // Clear form after successful mint
     setWalrusCid("");
     setMetadata("");
+    // Show success message
+    setTimeout(() => {
+      window.location.href = "/dashboard";
+    }, 2000);
   };
 
   return (

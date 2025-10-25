@@ -93,8 +93,16 @@ export const VerifyMintButton = ({
         </div>
 
         <div className="rounded-lg bg-muted p-4">
-          <p className="mb-2 text-xs font-medium text-muted-foreground">Walrus CID</p>
+          <p className="mb-2 text-xs font-medium text-muted-foreground">Walrus Content ID</p>
           <p className="break-all font-mono text-xs text-foreground">{walrusCid}</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            This content ID will be permanently stored on-chain
+          </p>
+        </div>
+        
+        <div className="rounded-lg bg-muted p-4">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">Metadata Preview</p>
+          <p className="text-xs text-foreground line-clamp-3">{metadata}</p>
         </div>
 
         <Button
